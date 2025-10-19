@@ -50,6 +50,7 @@ steps:
     id: 'Deploy RAW Template'
     waitFor: ['Push Base Image']
 
+
 # Define o local da imagem final
 images:
   - 'us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest'
