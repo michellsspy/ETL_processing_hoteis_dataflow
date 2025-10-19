@@ -39,9 +39,9 @@ def main_trusted(data_now):
         staging_location='gs://bk-etl-hotelaria/staging_location',
         autoscaling_algorithm='THROUGHPUT_BASED',
         worker_machine_type='n1-standard-4',
-        num_workers=1,
-        max_num_workers=3,
-        disk_size_gb=25,
+        #num_workers=1,
+        max_num_workers=10,
+        disk_size_gb=100,
         region='us-central1',
         project_id='etl-hoteis',
         staging_bucket='bk-etl-hotelaria',
@@ -52,8 +52,8 @@ def main_trusted(data_now):
         docker_registry_push_url='us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/hoteis-dev',
         sdk_container_image='us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest',
         sdk_location='container',
-        requirements_file='./requirements.txt',
-        metabase_file='./metadata.json',
+        #requirements_file='./requirements.txt',
+        #metabase_file='./metadata.json',
         setup_file='./setup.py',
         service_account_email='etl-hoteis@etl-hoteis.iam.gserviceaccount.com'
     )
