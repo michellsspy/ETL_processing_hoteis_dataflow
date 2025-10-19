@@ -8,9 +8,6 @@ import logging
 import sys
 import io
 
-# --- CORREÇÃO 1: Importar TaggedOutput ---
-from apache_beam.pvalue import TaggedOutput
-
 # Monitoramento Logging
 logging.basicConfig(
     level=logging.INFO,
