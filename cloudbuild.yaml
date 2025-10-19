@@ -31,7 +31,7 @@ steps:
           "name": "Pipeline Hotelaria - RAW",
           "description": "Carrega dados da Transient (GCS) para a Raw (BigQuery) com upsert.",
           "metadata": {
-            "mainFile": "pipeline_hotelaria/raw/main_raw.py"
+            "mainFile": "main.py"
           },
           "parameters": [
             { "name": "bq_project_id", "label": "Project ID", "helpText": "O ID do projeto GCP", "isOptional": false },
@@ -62,7 +62,7 @@ steps:
         echo "📊 Tamanho dos templates:"
         gsutil du -h gs://bk-etl-hotelaria/templates/pipeline_hotelaria_*.json
     id: 'Validate Templates'
-    waitFor: ['Deploy RAW Template', 'Deploy TRUSTED Template']
+    waitFor: ['Deploy RAW Template']
 
 # Define o local da imagem final
 images:
