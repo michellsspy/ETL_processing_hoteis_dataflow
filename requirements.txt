@@ -1,9 +1,9 @@
 apache_beam[gcp] == 2.64.0
 pandas
 pyarrow
-google-cloud-storage == 2.19.0
-google-cloud-secret-manager == 2.23.2
-google-cloud-bigquery == 3.31.0
+google-cloud-storage
+google-cloud-secret-manager
+google-cloud-bigquery
 pandas-gbq
 
 ## Instalar localmente apenas

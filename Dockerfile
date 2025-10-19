@@ -1,30 +1,46 @@
-FROM python:3.12-slim
+# ==========================================================
+# 🧩 BASE IMAGE OFICIAL — Dataflow Python 3.12 + Beam 2.64.0
+# ==========================================================
+FROM gcr.io/dataflow-templates-base/python312-template-launcher-base:beam-2.64.0
 
-# Copiando as dependências Beam e Template Launcher
-COPY --from=apache/beam_python3.12_sdk:2.64.0 /opt/apache/beam /opt/apache/beam
-COPY --from=gcr.io/dataflow-templates-base/python310-template-launcher-base:20230622_RC00 /opt/google/dataflow/python_template_launcher /opt/google/dataflow/python_template_launcher
-
+# ----------------------------------------------------------
+# 📁 Diretório de trabalho padrão dentro do container
+# ----------------------------------------------------------
 ARG WORKDIR=/template
 WORKDIR ${WORKDIR}
 
-# Variáveis de ambiente FLEXÍVEIS
+# ----------------------------------------------------------
+# 📦 Copiar apenas o requirements.txt primeiro (para cache)
+# ----------------------------------------------------------
+COPY requirements.txt .
+
+# Atualiza o pip e instala as dependências antes do código
+RUN pip install --upgrade pip && \
+    pip install -U -r requirements.txt
+
+# ----------------------------------------------------------
+# 📂 Agora copia todo o código fonte do projeto
+# ----------------------------------------------------------
+COPY . .
+
+# ----------------------------------------------------------
+# ⚙️ Variáveis de ambiente usadas pelo Template Launcher
+# ----------------------------------------------------------
 ENV FLEX_TEMPLATE_PYTHON_PY_FILE=${WORKDIR}/main.py
 ENV FLEX_TEMPLATE_PYTHON_SETUP_FILE=${WORKDIR}/setup.py
 ENV FLEX_TEMPLATES_TAIL_CMD_TIMEOUT_IN_SECS=30
 ENV FLEX_TEMPLATES_NUM_LOG_LINES=1000
 
-# Copiando TODO o código
-COPY . .
-
-# Instalando dependências
-RUN pip install --upgrade pip && pip install -U -r requirements.txt
-
-# Verificação CRÍTICA da estrutura
+# ----------------------------------------------------------
+# 🔍 Etapa opcional de verificação de estrutura
+# ----------------------------------------------------------
 RUN echo "🔍 Verificando estrutura do projeto..." && \
-    echo "📁 Pipeline RAW:" && ls -la pipeline_hotelaria/raw/ && \
-    echo "📁 Pipeline TRUSTED:" && ls -la pipeline_hotelaria/trusted/ && \
-    echo "✅ Main files encontrados:" && \
-    find . -name "main_*.py" -type f
+    echo "📁 Arquivos principais encontrados:" && \
+    find . -name "main_*.py" -type f && \
+    echo "📁 Estrutura do diretório atual:" && \
+    ls -R ${WORKDIR}
 
-# Entrypoint FLEXÍVEL
+# ----------------------------------------------------------
+# 🚀 ENTRYPOINT PADRÃO — nunca altere para Dataflow
+# ----------------------------------------------------------
 ENTRYPOINT ["/opt/apache/beam/boot"]
