@@ -1,0 +1,6 @@
+sudo snap install google-cloud-cli --classic
+sudo snap install google-cloud-sdk --classic
+
+Executar quando for usar a recuperação de secretes
+gcloud auth application-default login
+

@@ -1,0 +1,11 @@
+{
+    "name": "etl-hoteis",
+    "description": "Pipeline para a ingestão de dados",
+    "parameters": [
+      {
+        "name": "dataset",
+        "label": "Dataset that we will use",
+        "helpText": "Dataset that we will use to upload the temporary file"
+      }
+    ]
+  } 

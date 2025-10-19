@@ -1,0 +1,42 @@
+#--->>> Conceder as seguintes permições na conta de serviço
+roles/dataflow.admin
+roles/dataflow.worker
+roles/storage.objectAdmin
+roles/artifactregistry.reader
+
+#--->> Set project
+gcloud auth application-default set-quota-project prosite-455612
+
+gcloud artifacts repositories create etl-site-prosite \
+    --repository-format=docker \
+    --location=southamerica-east1
+
+
+gcloud auth configure-docker southamerica-east1-docker.pkg.dev
+
+
+#--->>> Sempre que alterar algo, precisa executar os comandos abaixo novamente
+
+gcloud builds submit --tag southamerica-east1-docker.pkg.dev/prosite-455612/etl-site-prosite/prosite-dev:latest .
+
+
+#--->>> Subnet
+https://www.googleapis.com/compute/v1/projects/prosite-455612/regions/southamerica-east1/subnetworks/vpc-prosite-455612
+
+
+#--->>> Executar só quando for utilizar o modelo com arquivo json
+
+gcloud dataflow flex-template build gs://dataflow-flex-model/templates//etl-site-prosite.json \
+ --image-gcr-path "southamerica-east1-docker.pkg.dev/prosite-455612/etl-site-prosite/prosite-455612-dev:latest" \
+ --sdk-language "PYTHON" \
+ --flex-template-base-image "PYTHON3" \
+ --metadata-file "metadata.json" \
+ --py-path "." \
+ --env "FLEX_TEMPLATE_PYTHON_PY_FILE=main.py" \
+ --env "FLEX_TEMPLATE_PYTHON_REQUIREMENTS_FILE=requirements.txt"
+
+
+
+gcloud dataflow flex-template build gs://etl-postgres-mss/templates/etl-site-prosite.json \
+    --image="southamerica-east1-docker.pkg.dev/prosite-455612/etl-site-prosite/prosite-455612-dev:latest" \
+    --sdk-language "PYTHON" 
