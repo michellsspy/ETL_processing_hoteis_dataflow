@@ -5,7 +5,7 @@ steps:
       [
         'build',
         '-t',
-        'us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest',
+        'us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest',
         '.',
       ]
     id: 'Build Base Image'
@@ -15,7 +15,7 @@ steps:
     args:
       [
         'push',
-        'us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest',
+        'us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest',
       ]
     id: 'Push Base Image'
     waitFor: ['Build Base Image']
@@ -43,7 +43,7 @@ steps:
 
         # 2. Comando 'build' (que aponta para a imagem base)
         gcloud dataflow flex-template build gs://bk-etl-hotelaria/templates/pipeline_hotelaria_RAW.json \
-          --image "us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest" \
+          --image "us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest" \
           --sdk-language "PYTHON" \
           --metadata-file "raw_metadata.json"
     id: 'Deploy RAW Template'
@@ -72,7 +72,7 @@ steps:
 
         # 2. Comando 'build' (que aponta para a imagem base)
         gcloud dataflow flex-template build gs://bk-etl-hotelaria/templates/pipeline_hotelaria_TRUSTED.json \
-          --image "us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest" \
+          --image "us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest" \
           --sdk-language "PYTHON" \
           --metadata-file "trusted_metadata.json"
     id: 'Deploy TRUSTED Template'
@@ -96,7 +96,7 @@ steps:
 
 # Define o local da imagem final
 images:
-  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest'
+  - 'us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest'
 
 # Configurações de timeout
 timeout: '1600s'

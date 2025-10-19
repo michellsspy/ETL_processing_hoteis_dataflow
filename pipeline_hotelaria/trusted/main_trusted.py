@@ -46,9 +46,11 @@ def main_trusted(data_now):
         project_id='etl-hoteis',
         staging_bucket='bk-etl-hotelaria',
         save_main_session=False,
+
+        # Configurações do SDK Container
         prebuild_sdk_container_engine='cloud_build',
         docker_registry_push_url='us-central1-docker.pkg.dev/etl-hoteis/etl-hoteis-process/hoteis-dev',
-        sdk_container_image='us-central1-docker.pkg.dev/etl-hoteis/etl-hoteis-process/hoteis-dev:latest',
+        sdk_container_image='us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest',
         sdk_location='container',
         requirements_file='./requirements.txt',
         metabase_file='./metadata.json',

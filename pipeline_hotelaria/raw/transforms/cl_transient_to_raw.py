@@ -1,16 +1,17 @@
-# Importações necessárias (mantendo as suas originais que são úteis)
+from apache_beam.pvalue import TaggedOutput
 from datetime import datetime
 from google.cloud import bigquery
 from google.cloud import storage
 import apache_beam as beam
-import pyarrow.parquet as pq  # Esta não é mais necessária para este DoFn
-import pyarrow as pa         # Esta não é mais necessária para este DoFn
 import pandas as pd
 import logging
 import sys
-import io                     # Importante para ler o CSV da memória
+import io
 
-# Monitoramento Logging (igual ao seu original)
+# --- CORREÇÃO 1: Importar TaggedOutput ---
+from apache_beam.pvalue import TaggedOutput
+
+# Monitoramento Logging
 logging.basicConfig(
     level=logging.INFO,
     stream=sys.stdout,
@@ -23,25 +24,21 @@ logger = logging.getLogger(__name__)
 
 class GcsCsvToBq(beam.DoFn):
     """
-    Este DoFn recebe um nome de pasta, lê o arquivo CSV correspondente
-    no GCS, adiciona colunas de data (insert/update) e o carrega
-    de forma incremental (append) em uma tabela do BigQuery.
+    Carrega CSV do GCS para o BQ.
+    Emite para a saída principal (sucesso) ou para a tag 'failed' (DLQ).
     """
 
+    # --- CORREÇÃO 2: Definir a tag de falha ---
+    TAG_FAILED = 'failed'
+
     def __init__(self):
-        # Define os valores fixos no construtor
         self.projeto = "etl-hoteis"
         self.dataset_id = "raw_hotelaria"
         self.bucket_name = "bk-etl-hotelaria"
-        
-        # Clientes serão inicializados no 'setup'
         self.storage_client = None
         self.bq_client = None
 
     def setup(self):
-        """
-        Inicializa os clientes BQ e GCS no worker do Beam.
-        """
         try:
             self.storage_client = storage.Client()
             self.bq_client = bigquery.Client(project=self.projeto)
@@ -56,18 +53,11 @@ class GcsCsvToBq(beam.DoFn):
         """
         try:
             # 1. Monta os nomes e caminhos
-            # Caminho do arquivo no GCS
             blob_path = f"transient/{folder_name}/{folder_name}.csv"
-            
-            # Nome da tabela no BQ
             partes = folder_name.split('_')  
             nome_sem_prefixo = '_'.join(partes[1:]) 
             table_name = f"raw_{nome_sem_prefixo}"
-            
-            # ID completo da tabela no BQ
             table_id = f"{self.projeto}.{self.dataset_id}.{table_name}"
-            
-            # Data e hora atuais para o insert_date
             now = datetime.now()
 
             logger.info(f"Iniciando processamento para: {folder_name}")
@@ -77,49 +67,47 @@ class GcsCsvToBq(beam.DoFn):
             bucket = self.storage_client.bucket(self.bucket_name)
             blob = bucket.blob(blob_path)
             
+            # --- CORREÇÃO 3: Tratar falha (não encontrado) ---
             if not blob.exists():
-                logger.warning(f"Arquivo não encontrado: {blob_path}. Pulando este item.")
-                yield f"Arquivo não encontrado: {blob_path}"
-                return  # Para a execução deste elemento
-
-            # Baixa o conteúdo do arquivo como bytes e decodifica para string
-            content = blob.download_as_string().decode('utf-8')
-
-            # 3. Transformação com Pandas
-            # Usa io.StringIO para permitir que o pandas leia a string como se fosse um arquivo
-            df = pd.read_csv(io.StringIO(content))
-
-            # 4. Adiciona as novas colunas
-            df['insert_date'] = pd.to_datetime(now)
-            df['update_date'] = pd.NaT  # pd.NaT é convertido para NULL no BigQuery
-
-            logger.info(f"Arquivo lido. {len(df)} linhas para carregar na tabela: {table_id}")
-
-            # 5. Configuração da Carga no BigQuery
-            job_config = bigquery.LoadJobConfig(
-                # WRITE_APPEND = Carga Incremental. Anexa os dados na tabela.
-                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
-                
-                # CREATE_IF_NEEDED = Cria a tabela se ela não existir.
-                create_disposition=bigquery.CreateDisposition.CREATE_IF_NEEDED,
-                
-                # O esquema será inferido pelo Pandas DataFrame.
-                # Se seus CSVs tiverem tipos complexos, talvez seja necessário
-                # definir o esquema (schema) explicitamente aqui.
-            )
-
-            # 6. Executa a carga
-            job = self.bq_client.load_table_from_dataframe(
-                df, table_id, job_config=job_config
-            )
+                error_msg = f"Arquivo não encontrado: {blob_path}. Pulando este item."
+                logger.warning(error_msg)
+                # Emite para a tag de falha
+                yield TaggedOutput(self.TAG_FAILED, error_msg)
+                # REMOVIDO o 'return' que causava o Warning
             
-            job.result()  # Espera o job de carga ser concluído
+            else:
+                # 3. O resto do processo só ocorre se o arquivo existir
+                content = blob.download_as_string().decode('utf-8')
+                df = pd.read_csv(io.StringIO(content))
 
-            logger.info(f"Carga incremental concluída com sucesso para {table_id}.")
-            
-            # Retorna uma mensagem de sucesso para o próximo estágio
-            yield f"Carga incremental para {table_id} concluída (Linhas: {len(df)})."
+                # 4. Adiciona as novas colunas
+                df['insert_date'] = pd.to_datetime(now)
+                df['update_date'] = pd.NaT
+
+                logger.info(f"Arquivo lido. {len(df)} linhas para carregar na tabela: {table_id}")
+
+                # 5. Configuração da Carga no BigQuery
+                job_config = bigquery.LoadJobConfig(
+                    write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+                    create_disposition=bigquery.CreateDisposition.CREATE_IF_NEEDED,
+                )
+
+                # 6. Executa a carga
+                job = self.bq_client.load_table_from_dataframe(
+                    df, table_id, job_config=job_config
+                )
+                job.result()  # Espera o job de carga ser concluído
+
+                success_msg = f"Carga incremental para {table_id} concluída (Linhas: {len(df)})."
+                logger.info(success_msg)
+                
+                # --- CORREÇÃO 4: Emitir sucesso para a saída principal ---
+                # Um 'yield' simples envia para a saída [None]
+                yield success_msg
 
         except Exception as e:
-            logger.error(f"Erro ao processar {folder_name}: {e}", exc_info=True)
-            yield f"Erro ao processar {folder_name}: {e}"
+            # --- CORREÇÃO 5: Tratar exceção geral (falha) ---
+            error_msg = f"Erro ao processar {folder_name}: {e}"
+            logger.error(error_msg, exc_info=True)
+            # Emite para a tag de falha
+            yield TaggedOutput(self.TAG_FAILED, error_msg)
