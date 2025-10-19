@@ -1,0 +1,62 @@
+steps:
+  # Etapa 1: Construir a IMAGEM BASE (com todo o código)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-t',
+        # Este é o nome correto da nossa imagem "base"
+        'us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest',
+        '.',
+      ]
+    id: 'Build Base Image'
+
+  # Etapa 2: Enviar (Push) a IMAGEM BASE
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'push',
+        'us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest',
+      ]
+    id: 'Push Base Image'
+    waitFor: ['Build Base Image']
+
+  # --- ETAPA 3: Construir o TEMPLATE da RAW ---
+  # (Usa o gcloud-sdk para criar o metadata.json e construir o template)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # 1. Criar o ficheiro de metadados para a RAW
+        echo '{
+          "name": "Pipeline Hotelaria - RAW",
+          "description": "Carrega dados da Transient (GCS) para a Raw (BigQuery) com upsert.",
+          "metadata": {
+            "mainFile": "pipeline_hotelaria/raw/main_raw.py"
+          },
+          "parameters": [
+            { "name": "input_hospedes", "label": "Input Hospedes (GCS)", "helpText": "Caminho para o source_hospedes.csv", "isOptional": false },
+            { "name": "bq_project_id", "label": "Project ID", "helpText": "O ID do projeto GCP", "isOptional": false },
+            { "name": "bq_dataset", "label": "BigQuery Dataset", "helpText": "Ex: raw_hotelaria", "isOptional": false }
+          ]
+        }' > raw_metadata.json
+
+        # 2. Comando 'build' (que aponta para a imagem base)
+        gcloud dataflow flex-template build gs://bk-etl-hotelaria/templates/pipeline_hotelaria_RAW.json \
+          --image "us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest" \
+          --sdk-language "PYTHON" \
+          --metadata-file "raw_metadata.json"
+    id: 'Deploy RAW Template'
+    waitFor: ['Push Base Image']
+
+# Define o local da imagem final
+images:
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest'
+
+# Configurações de timeout
+timeout: '1600s'
+
+# Apenas logging no Cloud Logging
+options:
+  logging: CLOUD_LOGGING_ONLY
