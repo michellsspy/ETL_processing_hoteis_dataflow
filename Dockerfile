@@ -27,4 +27,4 @@ RUN echo "🔍 Verificando estrutura do projeto..." && \
     find . -name "main_*.py" -type f
 
 # Entrypoint FLEXÍVEL
-ENTRYPOINT ["/opt/google/dataflow/python_template_launcher"]
+ENTRYPOINT ["/opt/apache/beam/boot"]
