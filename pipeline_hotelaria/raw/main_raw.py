@@ -39,7 +39,7 @@ def main_transient_to_raw(data_now):
         project_id='etl-hoteis',
         staging_bucket='bk-etl-hotelaria',
         save_main_session=True, 
-        experiments=['use_runner_v2'],
+        #experiments=['use_runner_v2'],
         
         # Configurações do SDK Container
         prebuild_sdk_container_engine='cloud_build',
