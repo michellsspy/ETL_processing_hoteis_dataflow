@@ -1,3 +1,20 @@
+## Executar Pipe Raw
+gcloud dataflow flex-template run "pipeline-raw-test-$(date +%Y%m%d-%H%M%S)" \
+    --template-file-gcs-location="gs://bk-etl-hotelaria/templates/pipeline_hotelaria_RAW.json" \
+    --region=us-central1 \
+    --parameters=bq_project_id=etl-hoteis \
+    --parameters=bq_dataset=raw_hotelaria \
+    --staging-location=gs://bk-etl-hotelaria/temp
+
+## Executar Pipe Trusted
+gcloud dataflow flex-template run "pipeline-trusted-test-$(date +%Y%m%d-%H%M%S)" \
+    --template-file-gcs-location="gs://bk-etl-hotelaria/templates/pipeline_hotelaria_TRUSTED.json" \
+    --region=us-central1 \
+    --parameters=bq_project_id=etl-hoteis \
+    --parameters=bq_dataset=trusted_hotelaria \
+    --staging-location=gs://bk-etl-hotelaria/temp
+
+
 #--->>> Conceder as seguintes permições na conta de serviço
 roles/dataflow.admin
 roles/dataflow.worker

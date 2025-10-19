@@ -5,7 +5,6 @@ steps:
       [
         'build',
         '-t',
-        # Este é o nome correto da nossa imagem "base"
         'us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest',
         '.',
       ]
@@ -22,7 +21,6 @@ steps:
     waitFor: ['Build Base Image']
 
   # --- ETAPA 3: Construir o TEMPLATE da RAW ---
-  # (Usa o gcloud-sdk para criar o metadata.json e construir o template)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
@@ -36,9 +34,10 @@ steps:
             "mainFile": "pipeline_hotelaria/raw/main_raw.py"
           },
           "parameters": [
-            { "name": "input_hospedes", "label": "Input Hospedes (GCS)", "helpText": "Caminho para o source_hospedes.csv", "isOptional": false },
             { "name": "bq_project_id", "label": "Project ID", "helpText": "O ID do projeto GCP", "isOptional": false },
-            { "name": "bq_dataset", "label": "BigQuery Dataset", "helpText": "Ex: raw_hotelaria", "isOptional": false }
+            { "name": "bq_dataset", "label": "BigQuery Dataset", "helpText": "Ex: raw_hotelaria", "isOptional": false },
+            { "name": "input_subscription", "label": "PubSub Subscription", "helpText": "Subscription para trigger", "isOptional": true },
+            { "name": "temp_location", "label": "Temp Location", "helpText": "Bucket para arquivos temporários", "isOptional": true }
           ]
         }' > raw_metadata.json
 
@@ -50,6 +49,50 @@ steps:
     id: 'Deploy RAW Template'
     waitFor: ['Push Base Image']
 
+  # --- ETAPA 4: Construir o TEMPLATE da TRUSTED ---
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # 1. Criar o ficheiro de metadados para a TRUSTED
+        echo '{
+          "name": "Pipeline Hotelaria - TRUSTED",
+          "description": "Carrega dados da Raw (BigQuery) para a Trusted (BigQuery) com transformações.",
+          "metadata": {
+            "mainFile": "pipeline_hotelaria/trusted/main_trusted.py"
+          },
+          "parameters": [
+            { "name": "bq_project_id", "label": "Project ID", "helpText": "O ID do projeto GCP", "isOptional": false },
+            { "name": "bq_dataset", "label": "BigQuery Dataset", "helpText": "Ex: trusted_hotelaria", "isOptional": false },
+            { "name": "input_subscription", "label": "PubSub Subscription", "helpText": "Subscription para trigger", "isOptional": true },
+            { "name": "temp_location", "label": "Temp Location", "helpText": "Bucket para arquivos temporários", "isOptional": true }
+          ]
+        }' > trusted_metadata.json
+
+        # 2. Comando 'build' (que aponta para a imagem base)
+        gcloud dataflow flex-template build gs://bk-etl-hotelaria/templates/pipeline_hotelaria_TRUSTED.json \
+          --image "us-central1-docker.pkg.dev/${PROJECT_ID}/meu-repo-dataflow/etl-processing-hoteis-base:latest" \
+          --sdk-language "PYTHON" \
+          --metadata-file "trusted_metadata.json"
+    id: 'Deploy TRUSTED Template'
+    waitFor: ['Push Base Image']
+
+  # Etapa adicional para validar os templates
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "✅ Validando templates criados..."
+        gsutil ls gs://bk-etl-hotelaria/templates/pipeline_hotelaria_RAW.json && echo "✅ RAW template válido"
+        gsutil ls gs://bk-etl-hotelaria/templates/pipeline_hotelaria_TRUSTED.json && echo "✅ TRUSTED template válido"
+        
+        # Verificar tamanho dos templates
+        echo "📊 Tamanho dos templates:"
+        gsutil du -h gs://bk-etl-hotelaria/templates/pipeline_hotelaria_*.json
+    id: 'Validate Templates'
+    waitFor: ['Deploy RAW Template', 'Deploy TRUSTED Template']
 
 # Define o local da imagem final
 images:

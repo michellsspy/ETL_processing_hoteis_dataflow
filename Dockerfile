@@ -7,35 +7,24 @@ COPY --from=gcr.io/dataflow-templates-base/python310-template-launcher-base:2023
 ARG WORKDIR=/template
 WORKDIR ${WORKDIR}
 
-# Argumentos de build
-ARG DB_USER 
-ARG DB_PASSWORD
-ARG DB_HOST
-ARG DB_PORT
-ARG DB_SERVICE
-
-# Variáveis de ambiente
-ENV DB_USER=${DB_USER}
-ENV DB_PASSWORD=${DB_PASSWORD}
-ENV DB_HOST=${DB_HOST}
-ENV DB_PORT=${DB_PORT}
-ENV DB_SERVICE=${DB_SERVICE}
-
-# Variáveis específicas do template
+# Variáveis de ambiente FLEXÍVEIS
 ENV FLEX_TEMPLATE_PYTHON_PY_FILE=${WORKDIR}/main.py
 ENV FLEX_TEMPLATE_PYTHON_SETUP_FILE=${WORKDIR}/setup.py
 ENV FLEX_TEMPLATES_TAIL_CMD_TIMEOUT_IN_SECS=30
 ENV FLEX_TEMPLATES_NUM_LOG_LINES=1000
 
-# Copiando código
+# Copiando TODO o código
 COPY . .
 
 # Instalando dependências
 RUN pip install --upgrade pip && pip install -U -r requirements.txt
 
-RUN ls -la /opt/apache/beam && \
-    ls -la /opt/google/dataflow/python_template_launcher && \
-    ls -la ${WORKDIR}
+# Verificação CRÍTICA da estrutura
+RUN echo "🔍 Verificando estrutura do projeto..." && \
+    echo "📁 Pipeline RAW:" && ls -la pipeline_hotelaria/raw/ && \
+    echo "📁 Pipeline TRUSTED:" && ls -la pipeline_hotelaria/trusted/ && \
+    echo "✅ Main files encontrados:" && \
+    find . -name "main_*.py" -type f
 
-# Entrypoint
-ENTRYPOINT ["/opt/apache/beam/boot"]
+# Entrypoint FLEXÍVEL
+ENTRYPOINT ["/opt/google/dataflow/python_template_launcher"]

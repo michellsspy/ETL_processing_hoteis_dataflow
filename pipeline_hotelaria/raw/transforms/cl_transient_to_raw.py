@@ -60,7 +60,9 @@ class GcsCsvToBq(beam.DoFn):
             blob_path = f"transient/{folder_name}/{folder_name}.csv"
             
             # Nome da tabela no BQ
-            table_name = f"raw_{folder_name}"
+            partes = folder_name.split('_')  
+            nome_sem_prefixo = '_'.join(partes[1:]) 
+            table_name = f"raw_{nome_sem_prefixo}"
             
             # ID completo da tabela no BQ
             table_id = f"{self.projeto}.{self.dataset_id}.{table_name}"
