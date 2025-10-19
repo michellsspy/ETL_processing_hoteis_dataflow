@@ -22,29 +22,29 @@ roles/storage.objectAdmin
 roles/artifactregistry.reader
 
 #--->> Set project
-gcloud auth application-default set-quota-project prosite-455612
+gcloud auth application-default set-quota-project etl-hoteis
 
-gcloud artifacts repositories create etl-site-prosite \
+gcloud artifacts repositories create etl-process-hoteis \
     --repository-format=docker \
-    --location=southamerica-east1
+    --location=us-central1
 
 
-gcloud auth configure-docker southamerica-east1-docker.pkg.dev
+gcloud auth configure-docker us-central1-docker.pkg.dev
 
 
 #--->>> Sempre que alterar algo, precisa executar os comandos abaixo novamente
 
-gcloud builds submit --tag southamerica-east1-docker.pkg.dev/prosite-455612/etl-site-prosite/prosite-dev:latest .
+gcloud builds submit --tag us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest .
 
 
 #--->>> Subnet
-https://www.googleapis.com/compute/v1/projects/prosite-455612/regions/southamerica-east1/subnetworks/vpc-prosite-455612
+https://www.googleapis.com/compute/v1/projects/etl-hoteis/regions/us-central1/subnetworks/vpc-etl-hoteis
 
 
 #--->>> Executar só quando for utilizar o modelo com arquivo json
 
-gcloud dataflow flex-template build gs://dataflow-flex-model/templates//etl-site-prosite.json \
- --image-gcr-path "southamerica-east1-docker.pkg.dev/prosite-455612/etl-site-prosite/prosite-455612-dev:latest" \
+gcloud dataflow flex-template build gs://dataflow-flex-model/templates//etl-process-hoteis.json \
+ --image-gcr-path "us-central1-docker.pkg.dev/etl-hoteis/etl-process-hoteis/etl-hoteis-dev:latest" \
  --sdk-language "PYTHON" \
  --flex-template-base-image "PYTHON3" \
  --metadata-file "metadata.json" \
@@ -54,6 +54,6 @@ gcloud dataflow flex-template build gs://dataflow-flex-model/templates//etl-site
 
 
 
-gcloud dataflow flex-template build gs://etl-postgres-mss/templates/etl-site-prosite.json \
-    --image="southamerica-east1-docker.pkg.dev/prosite-455612/etl-site-prosite/prosite-455612-dev:latest" \
+gcloud dataflow flex-template build gs://etl-postgres-mss/templates/etl-process-hoteis.json \
+    --image="us-central1-docker.pkg.dev/etl-hoteis/etl-process-hoteis/etl-hoteis-dev:latest" \
     --sdk-language "PYTHON" 

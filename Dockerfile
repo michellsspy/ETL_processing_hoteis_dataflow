@@ -1,47 +1,27 @@
-# ==========================================================
-# 🧩 BASE IMAGE OFICIAL — Dataflow Python 3.10 + Beam 2.64.0
-# ==========================================================
-# 🧩 BASE IMAGE OFICIAL — Dataflow Python 3.10
-# ==========================================================
-#
-# CORRETO (usando a tag 'latest'):
-FROM gcr.io/dataflow-templates-base/python310-template-launcher-base:latest
+FROM python:3.12-slim
 
-# ----------------------------------------------------------
-# 📁 Diretório de trabalho
-# ----------------------------------------------------------
+# Copiando as dependências Beam e Template Launcher
+COPY --from=apache/beam_python3.12_sdk:2.64.0 /opt/apache/beam /opt/apache/beam
+COPY --from=gcr.io/dataflow-templates-base/python310-template-launcher-base:20230622_RC00 /opt/google/dataflow/python_template_launcher /opt/google/dataflow/python_template_launcher
+
 ARG WORKDIR=/template
 WORKDIR ${WORKDIR}
 
-# ----------------------------------------------------------
-# 📦 Copiar apenas requirements.txt primeiro (cache)
-# ----------------------------------------------------------
-COPY requirements.txt .
-
-RUN pip install --upgrade pip && \
-    pip install -U -r requirements.txt
-
-# ----------------------------------------------------------
-# 📂 Copiar o restante do código
-# ----------------------------------------------------------
-COPY . .
-
-# ----------------------------------------------------------
-# ⚙️ Variáveis de ambiente usadas pelo Dataflow Launcher
-# ----------------------------------------------------------
+# Variáveis específicas do template
 ENV FLEX_TEMPLATE_PYTHON_PY_FILE=${WORKDIR}/main.py
 ENV FLEX_TEMPLATE_PYTHON_SETUP_FILE=${WORKDIR}/setup.py
 ENV FLEX_TEMPLATES_TAIL_CMD_TIMEOUT_IN_SECS=30
 ENV FLEX_TEMPLATES_NUM_LOG_LINES=1000
 
-# ----------------------------------------------------------
-# 🔍 Verificação opcional de estrutura
-# ----------------------------------------------------------
-RUN echo "🔍 Verificando estrutura do projeto..." && \
-    find . -name "main_*.py" -type f && \
-    ls -R ${WORKDIR}
+# Copiando código
+COPY . .
 
-# ----------------------------------------------------------
-# 🚀 ENTRYPOINT PADRÃO
-# ----------------------------------------------------------
+# Instalando dependências
+RUN pip install --upgrade pip && pip install -U -r requirements.txt
+
+RUN ls -la /opt/apache/beam && \
+    ls -la /opt/google/dataflow/python_template_launcher && \
+    ls -la ${WORKDIR}
+
+# Entrypoint
 ENTRYPOINT ["/opt/apache/beam/boot"]
