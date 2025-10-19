@@ -53,14 +53,14 @@ def main_trusted(data_now):
         requirements_file='./requirements.txt',
         metabase_file='./metadata.json',
         setup_file='./setup.py',
-        service_account_email='etl-743@etl-hoteis.iam.gserviceaccount.com'
+        service_account_email='etl-hoteis@etl-hoteis.iam.gserviceaccount.com'
     )
     
     # --- 4. Lógica do Pipeline (Execução Paralela) ---
     
     logger.info("Iniciando o pipeline da camada TRUSTED...")
     
-    with beam.Pipeline() as p:
+    with beam.Pipeline(options=options) as p:
         
         # O 'start' é uma PCollection inicial que dispara o pipeline.
         # Ele contém apenas um elemento (None)
