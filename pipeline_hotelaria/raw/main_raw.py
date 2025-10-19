@@ -43,7 +43,7 @@ def main_transient_to_raw(data_now):
         
         # Configurações do SDK Container
         prebuild_sdk_container_engine='cloud_build',
-        docker_registry_push_url='us-central1-docker.pkg.dev/etl-hoteis/etl-hoteis-process/hoteis-dev',
+        docker_registry_push_url='us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/hoteis-dev',
         sdk_container_image='us-central1-docker.pkg.dev/etl-hoteis/meu-repo-dataflow/etl-processing-hoteis-base:latest',
         sdk_location='container',
         requirements_file='./requirements.txt',
