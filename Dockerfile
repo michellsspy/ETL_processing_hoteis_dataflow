@@ -1,7 +1,11 @@
 # ==========================================================
 # 🧩 BASE IMAGE OFICIAL — Dataflow Python 3.10 + Beam 2.64.0
 # ==========================================================
-FROM gcr.io/dataflow-templates-base/python310-template-launcher-base:beam-2.64.0
+# 🧩 BASE IMAGE OFICIAL — Dataflow Python 3.10
+# ==========================================================
+#
+# CORRETO (usando a tag 'latest'):
+FROM gcr.io/dataflow-templates-base/python310-template-launcher-base:latest
 
 # ----------------------------------------------------------
 # 📁 Diretório de trabalho
