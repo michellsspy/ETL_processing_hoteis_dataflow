@@ -5,7 +5,7 @@ setup(
     version='0.0.1',
     packages=find_packages(),
     install_requires=[
-        'apache-beam[gcp]==2.64.0',
+        'apache-beam[gcp]==2.63.0',
         'pandas',
         'pyarrow',
         'google-cloud-storage',

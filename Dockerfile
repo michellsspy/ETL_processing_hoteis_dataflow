@@ -1,7 +1,7 @@
 # ==========================================================
-# 🧩 BASE IMAGE OFICIAL — Dataflow Python 3.12 + Beam 2.64.0
+# 🧩 BASE IMAGE OFICIAL — Dataflow Python 3.12 + Beam 2.63.0
 # ==========================================================
-FROM gcr.io/dataflow-templates-base/python312-template-launcher-base:beam-2.64.0
+FROM gcr.io/dataflow-templates-base/python312-template-launcher-base:beam-2.63.0
 
 # ----------------------------------------------------------
 # 📁 Diretório de trabalho padrão dentro do container
